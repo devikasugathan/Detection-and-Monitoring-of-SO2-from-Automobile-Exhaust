@@ -17,7 +17,7 @@ void loop() {
   Serial.println(sensorValue);
   sensor_volt = sensorValue*(5.0/1023.0); //Convert average to voltage 
   RS_air = ((5.0*10.0)/sensor_volt)-10.0; //Calculate RS in fresh air 
-  R0 = RS_air/27; //Calculate R0 
+  R0 = RS_air/27.5; //Calculate R0 
   Serial.print("Sensor RAW value = ");
   Serial.println(analogRead(A1));
   Serial.print("R0 = "); //Display "R0"
