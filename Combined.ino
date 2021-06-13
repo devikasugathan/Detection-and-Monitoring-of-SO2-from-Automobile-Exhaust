@@ -1,56 +1,52 @@
+int gas_sensor = A0; //SO2 sensor MQ-136
+float m = -0.8294; //Slope 
+float b = 1.358; //Y-Intercept 
+float R0 = 4.27; //From prev code
 
-String apiKey = "TVU7KWCC85548GT0";  //Change this key to your "Write API key"
+int CO_sensor = A1; //Sensor pin Mq-7
+float mco = -0.7527; //Slope 
+float bco = 1.30; //Y-Intercept 
+float R0co = 5.22; //Prev code
 
-int gas_sensor = A0; //Sensor pin 
-float m = -0.3376; //Slope 
-float b = 0.7165; //Y-Intercept 
-float R0 = 2.82; //Sensor Resistance in fresh air from previous code
-
-int CO_sensor = A1; //Sensor pin 
-float m1 = -0.6527; //Slope 
-float b1 = 1.30; //Y-Intercept 
-float R01 = 7.22; //Sensor Resistance
-
-
+String apiKey = "NO8MZ75WNDWGV1JD";  
 #include <dht.h>
 dht DHT;
 #define DHT11_PIN A2
 void setup() {
   
  
-  Serial.begin(9600);      // PC to Arduino Serial Monitor
-  Serial1.begin(115200);   // Arduino to ESP01 Communication
+  Serial.begin(9600);      
+  Serial1.begin(115200);   
   pinMode(gas_sensor, INPUT);
   pinMode(CO_sensor,INPUT);
   pinMode(A2,INPUT); //For DHT Sensor
  } 
 
 void loop() { 
-  // put your main code here, to run repeatedly:
-  float sensor_volt; //Define variable for sensor voltage 
-  float RS_gas; //Define variable for sensor resistance  
-  float ratio; //Define variable for ratio
-  float sensorValue = analogRead(gas_sensor); //Read analog values of sensor  
+  float sensor_volt; 
+  float RS_gas; 
+  float ratio; 
+  float sensorValue = analogRead(so_sensor); 
   sensor_volt = sensorValue*(5.0/1023.0); //Convert analog values to voltage 
-    RS_gas = ((5.0*10.0)/sensor_volt)-10.0; //Get value of RS in a gas
-  ratio = RS_gas/R0;  // Get ratio RS_gas/RS_air
-  double ppm_log = (log10(ratio)-b)/m; //Get ppm value in linear scale according to the the ratio value  
-  double ppm = pow(10, ppm_log); //Convert ppm value to log scale 
-  Serial.print("Our desired PPM = ");
+    RS_gas = ((5.0*10.0)/sensor_volt)-10.0; 
+  ratio = RS_gas/R0;  //in air
+  double ppm_log = (log10(ratio)-b)/m; 
+  double ppm = pow(10, ppm_log); 
+  Serial.print("SO2 in PPM = ");
   Serial.println(ppm);
   
 
-  float sensor_volt1; //Define variable for sensor voltage 
-  float RS_gas1; //Define variable for sensor resistance  
-  float ratio1; //Define variable for ratio
-  float sensorValue1 = analogRead(CO_sensor); //Read analog values of sensor  
-  sensor_volt1 = sensorValue1*(5.0/1023.0); //Convert analog values to voltage 
-  RS_gas1 = ((5.0*10.0)/sensor_volt1)-10.0; //Get value of RS in a gas
-  ratio1 = RS_gas1/R01;  // Get ratio RS_gas/RS_air
-  double ppm_log1 = (log10(ratio1)-b1)/m1; //Get ppm value in linear scale according to the the ratio value  
-  double ppm1 = pow(10, ppm_log1); //Convert ppm value to log scale 
-  Serial.print("CO PPM = ");
-  Serial.println(ppm1);
+  float sensor_voltco; 
+  float RS_gasco;
+  float ratioco; 
+  float sensorValueco = analogRead(CO_sensor); 
+  sensor_voltco = sensorValueco*(5.0/1023.0); 
+  RS_gasco = ((5.0*10.0)/sensor_voltco)-10.0; 
+  ratioco = RS_gasco/R0co;  
+  double ppm_logco = (log10(ratioco)-bco)/mco;
+  double ppmco = pow(10, ppm_logco); 
+  Serial.print("CO in PPM = ");
+  Serial.println(ppmco);
 
 
   int chk = DHT.read11(DHT11_PIN);
@@ -63,22 +59,22 @@ void loop() {
 
 
 
-  Serial1.println("AT+CIPMUX=0\r\n");      // To Set MUX = 0
-  delay(2000);                             // Wait for 2 sec
+  Serial1.println("AT+CIPMUX=0\r\n");      
+  delay(2000);                             // 2 sec
 
   // TCP connection 
-  String cmd = "AT+CIPSTART=\"TCP\",\"";   // TCP connection with https://thingspeak.com server
-  cmd += "184.106.153.149";                // IP addr of api.thingspeak.com
-  cmd += "\",80\r\n\r\n";                  // Port No. = 80
+  String cmd = "AT+CIPSTART=\"TCP\",\"";  
+  cmd += "184.106.153.149";                
+  cmd += "\",80\r\n\r\n";                 
 
-  Serial1.println(cmd);                    // Display above Command on PC
-  Serial.println(cmd);                     // Send above command to Rx1, Tx1
+  Serial1.println(cmd);                    
+  Serial.println(cmd);                     
 
   delay(1000);                         
 
-  if(Serial1.find("ERROR"))                // If returns error in TCP connection
+  if(Serial1.find("ERROR"))                
   { 
-    Serial.println("AT+CIPSTART error");   // Display error msg to PC
+    Serial.println("AT+CIPSTART error");   
     //return; 
   }
 
@@ -88,31 +84,31 @@ void loop() {
   getStr +="&field1=";
   getStr += ppm;
   getStr +="&field2=";
-  getStr += ppm1; 
+  getStr += ppmco;
   getStr +="&field3=";
   getStr += temp;
   getStr +="&field4=";
   getStr += hum;
   getStr += "\r\n\r\n"; 
 
-  Serial.println(getStr);                 // Display GET String on PC
+  Serial.println(getStr);                 
 
-  cmd = "AT+CIPSEND=";                    // send data length 
+  cmd = "AT+CIPSEND=";                    
   cmd += String(getStr.length());
   cmd+="\r\n";
 
-  Serial.println(cmd);                   // Display Data length on PC
-  Serial1.println(cmd);                  // Send Data length command to Tx1, Rx1
-  if(Serial1.find(">"))                    // If prompt opens //verify connection with cloud
+  Serial.println(cmd);                  
+  Serial1.println(cmd);                 
+  if(Serial1.find(">"))                  
   {
-    Serial.println("Pushed whole data TO CLOUD");  // Display confirmation msg to PC
-    Serial1.print(getStr);                 // Send GET String to Rx1, Tx1
+    Serial.println("Data sent to CLOUD");  
+    Serial1.print(getStr);                 
   }
   else
   { 
-    Serial1.println("AT+CIPCLOSE\r\n");    // Send Close Connection command to Rx1, Tx1
-    Serial.println("AT+CIPCLOSE");         // Display Connection closed command on PC
+    Serial1.println("AT+CIPCLOSE\r\n");    
+    Serial.println("AT+CIPCLOSE");         
   } 
-  // thingspeak free version needs 15-20 sec delay between every push
-  delay(15000);                            // wait for 16sec
+ 
+  delay(20000);                         
  }
